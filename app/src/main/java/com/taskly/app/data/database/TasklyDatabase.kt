@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.taskly.app.data.dao.CategoryDao
 import com.taskly.app.data.dao.ReminderDao
@@ -24,7 +25,7 @@ import kotlinx.coroutines.launch
         ReminderEntity::class,
         TaskHistoryEntity::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 abstract class TasklyDatabase : RoomDatabase() {
@@ -37,6 +38,13 @@ abstract class TasklyDatabase : RoomDatabase() {
         @Volatile
         private var INSTANCE: TasklyDatabase? = null
 
+        val MIGRATION_1_2 = object : Migration(1, 2) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE tasks ADD COLUMN voiceNotePath TEXT DEFAULT NULL")
+                db.execSQL("ALTER TABLE tasks ADD COLUMN voiceNoteDurationMs INTEGER DEFAULT NULL")
+            }
+        }
+
         fun getDatabase(context: Context, scope: CoroutineScope): TasklyDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -45,6 +53,7 @@ abstract class TasklyDatabase : RoomDatabase() {
                     "taskly_database"
                 )
                     .addCallback(DatabaseCallback(scope))
+                    .addMigrations(MIGRATION_1_2)
                     .fallbackToDestructiveMigration()
                     .build()
                 INSTANCE = instance

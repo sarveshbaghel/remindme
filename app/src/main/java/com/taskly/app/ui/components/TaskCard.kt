@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.outlined.Alarm
 import androidx.compose.material.icons.outlined.CalendarToday
+import androidx.compose.material.icons.outlined.Mic
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Repeat
 import androidx.compose.material3.Card
@@ -273,6 +274,33 @@ fun TaskCard(
                                 Spacer(modifier = Modifier.width(3.dp))
                                 Text(
                                     text = "${taskWithDetails.reminders.size}",
+                                    style = MaterialTheme.typography.labelMedium.copy(fontSize = 11.sp),
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+                    }
+
+                    // Voice Note Indicator
+                    if (!task.voiceNotePath.isNullOrBlank()) {
+                        Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f),
+                            modifier = Modifier.height(22.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Mic,
+                                    contentDescription = "Voice note attached",
+                                    modifier = Modifier.size(11.dp),
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                                Spacer(modifier = Modifier.width(3.dp))
+                                Text(
+                                    text = "Voice",
                                     style = MaterialTheme.typography.labelMedium.copy(fontSize = 11.sp),
                                     color = MaterialTheme.colorScheme.primary
                                 )

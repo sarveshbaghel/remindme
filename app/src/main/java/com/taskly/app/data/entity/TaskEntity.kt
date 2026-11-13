@@ -29,6 +29,8 @@ data class TaskEntity(
     val updatedAt: Long = System.currentTimeMillis(),
     val status: TaskStatus = TaskStatus.PENDING,
     val recurrenceRule: String? = null,
-    val archived: Boolean = false
+    val archived: Boolean = false,
+    val voiceNotePath: String? = null,
+    val voiceNoteDurationMs: Long? = null
 )
 

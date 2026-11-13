@@ -24,7 +24,9 @@ class BackupUtilsTest {
             categoryId = 1,
             priority = Priority.HIGH,
             dueDate = 1770000000000L,
-            status = TaskStatus.PENDING
+            status = TaskStatus.PENDING,
+            voiceNotePath = "/data/user/0/com.taskly.app/files/voice_notes/vn_1.m4a",
+            voiceNoteDurationMs = 15000L
         )
         val reminder = ReminderEntity(
             id = 100,
@@ -47,6 +49,8 @@ class BackupUtilsTest {
         val taskObj = tasksArray.getJSONObject(0)
         assertEquals("Prepare presentation", taskObj.getString("title"))
         assertEquals("HIGH", taskObj.getString("priority"))
+        assertEquals("/data/user/0/com.taskly.app/files/voice_notes/vn_1.m4a", taskObj.getString("voiceNotePath"))
+        assertEquals(15000L, taskObj.getLong("voiceNoteDurationMs"))
 
         val remArray = taskObj.getJSONArray("reminders")
         assertEquals(1, remArray.length())

@@ -290,6 +290,11 @@ class TaskRepository(
     }
 
     suspend fun deleteTask(taskId: Long) {
+        val task = taskDao.getTaskById(taskId)
+        task?.voiceNotePath?.let { path ->
+            val file = java.io.File(path)
+            if (file.exists()) file.delete()
+        }
         val reminders = reminderDao.getRemindersForTaskSync(taskId)
         reminders.forEach { alarmScheduler?.cancel(it.id) }
         taskDao.deleteTaskById(taskId)

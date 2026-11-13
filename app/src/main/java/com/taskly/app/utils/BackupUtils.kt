@@ -50,6 +50,8 @@ object BackupUtils {
             if (t.recurrenceRule != null) taskObj.put("recurrenceRule", t.recurrenceRule)
             taskObj.put("createdAt", t.createdAt)
             if (t.completedAt != null) taskObj.put("completedAt", t.completedAt)
+            if (t.voiceNotePath != null) taskObj.put("voiceNotePath", t.voiceNotePath)
+            if (t.voiceNoteDurationMs != null) taskObj.put("voiceNoteDurationMs", t.voiceNoteDurationMs)
 
             // Reminders for this task
             val remArray = JSONArray()
@@ -118,6 +120,8 @@ object BackupUtils {
                 val recurrenceRule = if (taskObj.has("recurrenceRule")) taskObj.getString("recurrenceRule") else null
                 val createdAt = taskObj.optLong("createdAt", System.currentTimeMillis())
                 val completedAt = if (taskObj.has("completedAt")) taskObj.getLong("completedAt") else null
+                val voiceNotePath = if (taskObj.has("voiceNotePath")) taskObj.getString("voiceNotePath") else null
+                val voiceNoteDurationMs = if (taskObj.has("voiceNoteDurationMs")) taskObj.getLong("voiceNoteDurationMs") else null
 
                 val taskEntity = TaskEntity(
                     title = title,
@@ -129,7 +133,9 @@ object BackupUtils {
                     status = status,
                     recurrenceRule = recurrenceRule,
                     createdAt = createdAt,
-                    completedAt = completedAt
+                    completedAt = completedAt,
+                    voiceNotePath = voiceNotePath,
+                    voiceNoteDurationMs = voiceNoteDurationMs
                 )
 
                 val reminderEntities = mutableListOf<ReminderEntity>()

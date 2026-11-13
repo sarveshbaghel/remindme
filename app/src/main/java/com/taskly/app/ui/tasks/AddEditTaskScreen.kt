@@ -1,5 +1,13 @@
 package com.taskly.app.ui.tasks
 
+import android.Manifest
+import android.app.Activity
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.speech.RecognizerIntent
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -27,6 +35,8 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.outlined.AccessTime
 import androidx.compose.material.icons.outlined.Alarm
 import androidx.compose.material.icons.outlined.CalendarToday
+import androidx.compose.material.icons.outlined.GraphicEq
+import androidx.compose.material.icons.outlined.Mic
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Repeat
 import androidx.compose.material3.AlertDialog
@@ -59,12 +69,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import com.taskly.app.data.model.Priority
 import com.taskly.app.data.model.ReminderType
 import com.taskly.app.ui.components.CategoryIconHelper
+import com.taskly.app.ui.components.VoiceNotePlayer
+import com.taskly.app.ui.components.VoiceNoteRecorderBar
 import com.taskly.app.utils.DateUtils
 import java.time.Instant
 import java.time.LocalDate
@@ -79,12 +93,77 @@ fun AddEditTaskScreen(
 ) {
     val categories by viewModel.categories.collectAsState()
     val scrollState = rememberScrollState()
+    val context = LocalContext.current
 
     var showDatePicker by remember { mutableStateOf(false) }
     var showTimePicker by remember { mutableStateOf(false) }
     var showCategoryDialog by remember { mutableStateOf(false) }
     var showReminderDialog by remember { mutableStateOf(false) }
     var newCategoryName by remember { mutableStateOf("") }
+
+    var pendingAudioAction by remember { mutableStateOf<String?>(null) } // "DICTATE" or "RECORD"
+
+    // Speech to Text launcher
+    val speechRecognizerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val spokenText = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull()
+            if (!spokenText.isNullOrBlank()) {
+                viewModel.appendDictatedText(spokenText)
+            }
+        }
+    }
+
+    val launchSpeechRecognition: () -> Unit = {
+        try {
+            val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                putExtra(RecognizerIntent.EXTRA_PROMPT, "Speak to dictate description...")
+            }
+            speechRecognizerLauncher.launch(intent)
+        } catch (e: Exception) {
+            Toast.makeText(context, "Speech recognition is not supported on this device", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    // Microphone permission launcher
+    val recordAudioPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            when (pendingAudioAction) {
+                "DICTATE" -> launchSpeechRecognition()
+                "RECORD" -> {
+                    val started = viewModel.startVoiceRecording()
+                    if (!started) {
+                        Toast.makeText(context, "Could not start audio recorder", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+        } else {
+            Toast.makeText(context, "Microphone permission is required for voice features", Toast.LENGTH_SHORT).show()
+        }
+        pendingAudioAction = null
+    }
+
+    val checkPermissionAndExecute: (String) -> Unit = { action ->
+        pendingAudioAction = action
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+            when (action) {
+                "DICTATE" -> launchSpeechRecognition()
+                "RECORD" -> {
+                    val started = viewModel.startVoiceRecording()
+                    if (!started) {
+                        Toast.makeText(context, "Could not start audio recorder", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+            pendingAudioAction = null
+        } else {
+            recordAudioPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+        }
+    }
 
     val datePickerState = rememberDatePickerState(
         initialSelectedDateMillis = viewModel.selectedDueDate.value ?: System.currentTimeMillis()
@@ -149,17 +228,105 @@ fun AddEditTaskScreen(
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            // Task Description
+            // Task Description Header with Dictate and Voice Note actions
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Description",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    // Voice to Text (Dictate)
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                        modifier = Modifier.clickable { checkPermissionAndExecute("DICTATE") }
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Mic,
+                                contentDescription = "Dictate",
+                                modifier = Modifier.size(15.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "Dictate",
+                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium),
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+
+                    // Voice Note (Record Audio)
+                    if (!viewModel.isRecording.value && viewModel.voiceNotePath.value == null) {
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                            modifier = Modifier.clickable { checkPermissionAndExecute("RECORD") }
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.GraphicEq,
+                                    contentDescription = "Voice Note",
+                                    modifier = Modifier.size(15.dp),
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = "Voice Note",
+                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium),
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(6.dp))
+
+            // Task Description TextField
             OutlinedTextField(
                 value = viewModel.description.value,
                 onValueChange = { viewModel.description.value = it },
-                label = { Text("Description (Optional)") },
                 placeholder = { Text("Add notes, subtasks, or links...") },
                 modifier = Modifier.fillMaxWidth(),
                 minLines = 3,
                 maxLines = 6,
                 shape = RoundedCornerShape(12.dp)
             )
+
+            // Voice Note Recorder Bar (Active recording)
+            if (viewModel.isRecording.value) {
+                Spacer(modifier = Modifier.height(8.dp))
+                VoiceNoteRecorderBar(
+                    durationSeconds = viewModel.recordingDurationSeconds.value,
+                    onCancel = { viewModel.cancelVoiceRecording() },
+                    onDone = { viewModel.stopVoiceRecording() }
+                )
+            }
+
+            // Voice Note Player (Attached voice note)
+            viewModel.voiceNotePath.value?.let { path ->
+                Spacer(modifier = Modifier.height(8.dp))
+                VoiceNotePlayer(
+                    filePath = path,
+                    totalDurationMs = viewModel.voiceNoteDurationMs.value,
+                    onDelete = { viewModel.removeVoiceNote() }
+                )
+            }
 
             Spacer(modifier = Modifier.height(20.dp))
 

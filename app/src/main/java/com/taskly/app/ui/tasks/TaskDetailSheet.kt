@@ -45,6 +45,7 @@ import androidx.compose.ui.unit.dp
 import com.taskly.app.data.model.TaskStatus
 import com.taskly.app.data.model.TaskWithDetails
 import com.taskly.app.ui.components.CategoryIconHelper
+import com.taskly.app.ui.components.VoiceNotePlayer
 import com.taskly.app.ui.theme.Error
 import com.taskly.app.utils.DateUtils
 
@@ -152,6 +153,16 @@ fun TaskDetailSheet(
                     text = task.description,
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            // Attached Voice Note
+            task.voiceNotePath?.let { path ->
+                Spacer(modifier = Modifier.height(12.dp))
+                VoiceNotePlayer(
+                    filePath = path,
+                    totalDurationMs = task.voiceNoteDurationMs,
+                    onDelete = null
                 )
             }
 

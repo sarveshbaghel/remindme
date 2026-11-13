@@ -198,6 +198,7 @@ fun TasklyNavigation() {
                 val dateMillis = backStackEntry.arguments?.getString("date")?.toLongOrNull()
                 val addViewModel: AddEditTaskViewModel = viewModel(
                     factory = AddEditTaskViewModel.Factory(
+                        context = context,
                         taskRepository = app.container.taskRepository,
                         categoryRepository = app.container.categoryRepository,
                         taskId = -1L,
@@ -221,6 +222,7 @@ fun TasklyNavigation() {
                 val taskId = backStackEntry.arguments?.getLong("taskId") ?: -1L
                 val editViewModel: AddEditTaskViewModel = viewModel(
                     factory = AddEditTaskViewModel.Factory(
+                        context = context,
                         taskRepository = app.container.taskRepository,
                         categoryRepository = app.container.categoryRepository,
                         taskId = taskId
