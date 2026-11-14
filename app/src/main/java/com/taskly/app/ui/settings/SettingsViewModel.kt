@@ -72,13 +72,21 @@ class SettingsViewModel(
 
     fun clearCompletedTasks() {
         viewModelScope.launch {
-            taskRepository.clearCompletedTasks()
+            try {
+                taskRepository.clearCompletedTasks()
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 
     fun deleteAllData() {
         viewModelScope.launch {
-            taskRepository.deleteAllTasks()
+            try {
+                taskRepository.deleteAllTasks()
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 

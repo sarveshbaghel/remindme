@@ -1,5 +1,12 @@
 package com.taskly.app.ui.navigation
 
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -119,6 +126,10 @@ fun TasklyNavigation() {
             navController = navController,
             startDestination = Tab.Home.route,
             modifier = Modifier.padding(padding),
+            enterTransition = { fadeIn(animationSpec = tween(250)) },
+            exitTransition = { fadeOut(animationSpec = tween(250)) },
+            popEnterTransition = { fadeIn(animationSpec = tween(250)) },
+            popExitTransition = { fadeOut(animationSpec = tween(250)) }
         ) {
             composable(Tab.Home.route) {
                 val homeViewModel: HomeViewModel = viewModel(
@@ -171,7 +182,21 @@ fun TasklyNavigation() {
                 )
             }
 
-            composable("settings") {
+            composable(
+                route = "settings",
+                enterTransition = {
+                    slideInHorizontally(initialOffsetX = { it }, animationSpec = tween(300)) + fadeIn(animationSpec = tween(300))
+                },
+                exitTransition = {
+                    slideOutHorizontally(targetOffsetX = { -it / 3 }, animationSpec = tween(300)) + fadeOut(animationSpec = tween(300))
+                },
+                popEnterTransition = {
+                    slideInHorizontally(initialOffsetX = { -it / 3 }, animationSpec = tween(300)) + fadeIn(animationSpec = tween(300))
+                },
+                popExitTransition = {
+                    slideOutHorizontally(targetOffsetX = { it }, animationSpec = tween(300)) + fadeOut(animationSpec = tween(300))
+                }
+            ) {
                 val settingsViewModel: SettingsViewModel = viewModel(
                     factory = SettingsViewModel.Factory(
                         userPreferences = app.container.userPreferences,
@@ -193,7 +218,19 @@ fun TasklyNavigation() {
                         nullable = true
                         defaultValue = null
                     }
-                )
+                ),
+                enterTransition = {
+                    slideInVertically(initialOffsetY = { it }, animationSpec = tween(350)) + fadeIn(animationSpec = tween(350))
+                },
+                exitTransition = {
+                    slideOutVertically(targetOffsetY = { it }, animationSpec = tween(300)) + fadeOut(animationSpec = tween(300))
+                },
+                popEnterTransition = {
+                    slideInVertically(initialOffsetY = { it }, animationSpec = tween(300)) + fadeIn(animationSpec = tween(300))
+                },
+                popExitTransition = {
+                    slideOutVertically(targetOffsetY = { it }, animationSpec = tween(350)) + fadeOut(animationSpec = tween(350))
+                }
             ) { backStackEntry ->
                 val dateMillis = backStackEntry.arguments?.getString("date")?.toLongOrNull()
                 val addViewModel: AddEditTaskViewModel = viewModel(
@@ -217,7 +254,19 @@ fun TasklyNavigation() {
                     navArgument("taskId") {
                         type = NavType.LongType
                     }
-                )
+                ),
+                enterTransition = {
+                    slideInVertically(initialOffsetY = { it }, animationSpec = tween(350)) + fadeIn(animationSpec = tween(350))
+                },
+                exitTransition = {
+                    slideOutVertically(targetOffsetY = { it }, animationSpec = tween(300)) + fadeOut(animationSpec = tween(300))
+                },
+                popEnterTransition = {
+                    slideInVertically(initialOffsetY = { it }, animationSpec = tween(300)) + fadeIn(animationSpec = tween(300))
+                },
+                popExitTransition = {
+                    slideOutVertically(targetOffsetY = { it }, animationSpec = tween(350)) + fadeOut(animationSpec = tween(350))
+                }
             ) { backStackEntry ->
                 val taskId = backStackEntry.arguments?.getLong("taskId") ?: -1L
                 val editViewModel: AddEditTaskViewModel = viewModel(

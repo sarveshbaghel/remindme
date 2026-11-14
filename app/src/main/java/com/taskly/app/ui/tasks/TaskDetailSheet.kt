@@ -40,6 +40,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.taskly.app.data.model.TaskStatus
@@ -67,6 +69,7 @@ fun TaskDetailSheet(
     val task = taskWithDetails.task
     val category = taskWithDetails.category
     val isCompleted = task.status == TaskStatus.COMPLETED
+    val haptic = LocalHapticFeedback.current
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -244,6 +247,7 @@ fun TaskDetailSheet(
             // Main Primary Action (Complete / Reopen)
             Button(
                 onClick = {
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                     onToggleCompletion()
                     onDismiss()
                 },
@@ -274,6 +278,7 @@ fun TaskDetailSheet(
             ) {
                 FilledTonalButton(
                     onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                         onPostpone(1)
                         onDismiss()
                     },
@@ -285,6 +290,7 @@ fun TaskDetailSheet(
 
                 FilledTonalButton(
                     onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                         onPostpone(3)
                         onDismiss()
                     },
@@ -333,6 +339,7 @@ fun TaskDetailSheet(
 
                 OutlinedButton(
                     onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                         onDelete()
                         onDismiss()
                     },

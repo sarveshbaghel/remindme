@@ -24,7 +24,8 @@ data class TasksScreenUiState(
     val currentSort: TaskSort = TaskSort.DUE_DATE,
     val selectedCategoryId: Long? = null,
     val searchQuery: String = "",
-    val isLoading: Boolean = true
+    val isLoading: Boolean = true,
+    val errorMessage: String? = null
 )
 
 private data class TasksFilterParams(
@@ -149,6 +150,9 @@ class TasksViewModel(
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), TasksScreenUiState())
 
+    private var recentlyDeletedTask: TaskWithDetails? = null
+    private var recentlyArchivedTaskId: Long? = null
+
     fun setFilter(filter: TaskFilter) {
         _currentFilter.value = filter
     }
@@ -167,31 +171,98 @@ class TasksViewModel(
 
     fun toggleTaskCompletion(taskId: Long) {
         viewModelScope.launch {
-            taskRepository.toggleTaskCompletion(taskId)
+            try {
+                taskRepository.toggleTaskCompletion(taskId)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 
     fun postponeTask(taskId: Long, days: Long = 1) {
         viewModelScope.launch {
-            taskRepository.postponeTask(taskId, days)
+            try {
+                taskRepository.postponeTask(taskId, days)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 
     fun duplicateTask(taskId: Long) {
         viewModelScope.launch {
-            taskRepository.duplicateTask(taskId)
+            try {
+                taskRepository.duplicateTask(taskId)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 
     fun archiveTask(taskId: Long) {
         viewModelScope.launch {
-            taskRepository.archiveTask(taskId)
+            try {
+                taskRepository.archiveTask(taskId)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    fun archiveTaskWithUndo(taskItem: TaskWithDetails, onShowUndo: (String, () -> Unit) -> Unit) {
+        viewModelScope.launch {
+            try {
+                recentlyArchivedTaskId = taskItem.task.id
+                taskRepository.archiveTask(taskItem.task.id)
+                onShowUndo("Task archived") {
+                    viewModelScope.launch {
+                        try {
+                            taskRepository.updateTask(taskItem.task.copy(archived = false), taskItem.reminders)
+                            recentlyArchivedTaskId = null
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 
     fun deleteTask(taskId: Long) {
         viewModelScope.launch {
-            taskRepository.deleteTask(taskId)
+            try {
+                taskRepository.deleteTask(taskId)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    fun deleteTaskWithUndo(taskItem: TaskWithDetails, onShowUndo: (String, () -> Unit) -> Unit) {
+        viewModelScope.launch {
+            try {
+                recentlyDeletedTask = taskItem
+                taskRepository.deleteTask(taskItem.task.id)
+                onShowUndo("Task deleted") {
+                    viewModelScope.launch {
+                        try {
+                            recentlyDeletedTask?.let { deleted ->
+                                taskRepository.insertTask(
+                                    deleted.task.copy(id = 0),
+                                    deleted.reminders.map { it.copy(id = 0) }
+                                )
+                                recentlyDeletedTask = null
+                            }
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 

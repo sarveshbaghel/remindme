@@ -22,7 +22,8 @@ data class HomeUiState(
     val pendingCount: Int = 0,
     val overdueCount: Int = 0,
     val completionPercentage: Int = 0,
-    val isLoading: Boolean = true
+    val isLoading: Boolean = true,
+    val errorMessage: String? = null
 )
 
 class HomeViewModel(
@@ -31,6 +32,9 @@ class HomeViewModel(
 
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery
+
+    private var recentlyDeletedTask: TaskWithDetails? = null
+    private var recentlyArchivedTaskId: Long? = null
 
     val uiState: StateFlow<HomeUiState> = combine(
         taskRepository.getTodayPendingTasks(),
@@ -57,31 +61,78 @@ class HomeViewModel(
 
     fun toggleTaskCompletion(taskId: Long) {
         viewModelScope.launch {
-            taskRepository.toggleTaskCompletion(taskId)
+            try {
+                taskRepository.toggleTaskCompletion(taskId)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 
     fun postponeTask(taskId: Long, days: Long = 1) {
         viewModelScope.launch {
-            taskRepository.postponeTask(taskId, days)
+            try {
+                taskRepository.postponeTask(taskId, days)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 
     fun duplicateTask(taskId: Long) {
         viewModelScope.launch {
-            taskRepository.duplicateTask(taskId)
+            try {
+                taskRepository.duplicateTask(taskId)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 
-    fun archiveTask(taskId: Long) {
+    fun archiveTaskWithUndo(taskItem: TaskWithDetails, onShowUndo: (String, () -> Unit) -> Unit) {
         viewModelScope.launch {
-            taskRepository.archiveTask(taskId)
+            try {
+                recentlyArchivedTaskId = taskItem.task.id
+                taskRepository.archiveTask(taskItem.task.id)
+                onShowUndo("Task archived") {
+                    viewModelScope.launch {
+                        try {
+                            taskRepository.updateTask(taskItem.task.copy(archived = false), taskItem.reminders)
+                            recentlyArchivedTaskId = null
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 
-    fun deleteTask(taskId: Long) {
+    fun deleteTaskWithUndo(taskItem: TaskWithDetails, onShowUndo: (String, () -> Unit) -> Unit) {
         viewModelScope.launch {
-            taskRepository.deleteTask(taskId)
+            try {
+                recentlyDeletedTask = taskItem
+                taskRepository.deleteTask(taskItem.task.id)
+                onShowUndo("Task deleted") {
+                    viewModelScope.launch {
+                        try {
+                            recentlyDeletedTask?.let { deleted ->
+                                taskRepository.insertTask(
+                                    deleted.task.copy(id = 0),
+                                    deleted.reminders.map { it.copy(id = 0) }
+                                )
+                                recentlyDeletedTask = null
+                            }
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 
@@ -92,4 +143,3 @@ class HomeViewModel(
         }
     }
 }
-

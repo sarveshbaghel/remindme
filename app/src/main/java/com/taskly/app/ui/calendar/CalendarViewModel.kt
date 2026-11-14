@@ -83,31 +83,51 @@ class CalendarViewModel(
 
     fun toggleTaskCompletion(taskId: Long) {
         viewModelScope.launch {
-            taskRepository.toggleTaskCompletion(taskId)
+            try {
+                taskRepository.toggleTaskCompletion(taskId)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 
     fun postponeTask(taskId: Long, days: Long = 1) {
         viewModelScope.launch {
-            taskRepository.postponeTask(taskId, days)
+            try {
+                taskRepository.postponeTask(taskId, days)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 
     fun duplicateTask(taskId: Long) {
         viewModelScope.launch {
-            taskRepository.duplicateTask(taskId)
+            try {
+                taskRepository.duplicateTask(taskId)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 
     fun archiveTask(taskId: Long) {
         viewModelScope.launch {
-            taskRepository.archiveTask(taskId)
+            try {
+                taskRepository.archiveTask(taskId)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 
     fun deleteTask(taskId: Long) {
         viewModelScope.launch {
-            taskRepository.deleteTask(taskId)
+            try {
+                taskRepository.deleteTask(taskId)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 

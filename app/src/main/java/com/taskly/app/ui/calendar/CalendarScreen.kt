@@ -107,15 +107,13 @@ fun CalendarScreen(
                     Spacer(modifier = Modifier.width(6.dp))
 
                     IconButton(
-                        onClick = { viewModel.previousMonth() },
-                        modifier = Modifier.size(32.dp)
+                        onClick = { viewModel.previousMonth() }
                     ) {
                         Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "Previous Month")
                     }
 
                     IconButton(
-                        onClick = { viewModel.nextMonth() },
-                        modifier = Modifier.size(32.dp)
+                        onClick = { viewModel.nextMonth() }
                     ) {
                         Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "Next Month")
                     }

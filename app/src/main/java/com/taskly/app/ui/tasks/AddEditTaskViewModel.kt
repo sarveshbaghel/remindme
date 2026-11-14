@@ -191,10 +191,14 @@ class AddEditTaskViewModel(
 
     fun addCustomCategory(name: String, icon: String = "Folder", colorHex: Long = 0xFF635BFF) {
         viewModelScope.launch {
-            val newId = categoryRepository.insertCategory(
-                CategoryEntity(name = name, iconName = icon, colorHex = colorHex)
-            )
-            selectedCategoryId.value = newId
+            try {
+                val newId = categoryRepository.insertCategory(
+                    CategoryEntity(name = name, iconName = icon, colorHex = colorHex)
+                )
+                selectedCategoryId.value = newId
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 
@@ -204,36 +208,41 @@ class AddEditTaskViewModel(
 
         isSaving.value = true
         viewModelScope.launch {
-            val task = TaskEntity(
-                id = if (isEditMode) initialTaskId else 0,
-                title = trimmedTitle,
-                description = description.value.trim(),
-                categoryId = selectedCategoryId.value,
-                priority = selectedPriority.value,
-                dueDate = selectedDueDate.value,
-                dueTime = selectedDueTime.value,
-                recurrenceRule = selectedRecurrence.value,
-                voiceNotePath = voiceNotePath.value,
-                voiceNoteDurationMs = voiceNoteDurationMs.value
-            )
-
-            val reminderEntities = reminderDrafts.map { draft ->
-                ReminderEntity(
-                    id = draft.id,
-                    taskId = task.id,
-                    reminderDateTime = draft.reminderDateTime,
-                    reminderType = draft.reminderType
+            try {
+                val task = TaskEntity(
+                    id = if (isEditMode) initialTaskId else 0,
+                    title = trimmedTitle,
+                    description = description.value.trim(),
+                    categoryId = selectedCategoryId.value,
+                    priority = selectedPriority.value,
+                    dueDate = selectedDueDate.value,
+                    dueTime = selectedDueTime.value,
+                    recurrenceRule = selectedRecurrence.value,
+                    voiceNotePath = voiceNotePath.value,
+                    voiceNoteDurationMs = voiceNoteDurationMs.value
                 )
-            }
 
-            if (isEditMode) {
-                taskRepository.updateTask(task, reminderEntities)
-            } else {
-                taskRepository.insertTask(task, reminderEntities)
-            }
+                val reminderEntities = reminderDrafts.map { draft ->
+                    ReminderEntity(
+                        id = draft.id,
+                        taskId = task.id,
+                        reminderDateTime = draft.reminderDateTime,
+                        reminderType = draft.reminderType
+                    )
+                }
 
-            isSaving.value = false
-            onSaved()
+                if (isEditMode) {
+                    taskRepository.updateTask(task, reminderEntities)
+                } else {
+                    taskRepository.insertTask(task, reminderEntities)
+                }
+
+                isSaving.value = false
+                onSaved()
+            } catch (e: Exception) {
+                isSaving.value = false
+                e.printStackTrace()
+            }
         }
     }
 
